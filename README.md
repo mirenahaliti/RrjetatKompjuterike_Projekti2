@@ -1,1 +1,1 @@
-# RrjetatKompjuterike_Projekti2
+# Programimi me sockets - UDP
