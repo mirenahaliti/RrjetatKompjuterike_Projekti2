@@ -19,6 +19,7 @@ if not os.path.exists(SERVER_DIR):
 
 
 
+
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
