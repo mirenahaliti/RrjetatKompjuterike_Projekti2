@@ -1,94 +1,70 @@
-import socket
-import os
+def get_file_info(filename):
+    filename = safe_filename(filename)
+    if not filename:
+        return "Emri i file-it nuk eshte valid."
 
-SERVER_IP = '192.168.0.24'   # ndrysho sipas IP te serverit
-SERVER_PORT = 12009
-BUFFER_SIZE = 4096
+    path = os.path.join(SERVER_DIR, filename)
+    if not os.path.exists(path):
+        return "Skedari nuk u gjet."
 
-
-def start_client():
-    client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    print("Klienti u startua.")
-    print("Shkruaj komanda si:")
-    print("/list")
-    print("/read emri.txt")
-    print("/search fjala")
-    print("/download emri.txt")
-    print("/upload emri.txt")
-    print("/delete emri.txt")
-    print("/info emri.txt")
-    print("Per dalje shkruaj: exit")
-    print()
-
-    while True:
-        msg = input("Shkruaj komanden: ").strip()
-
-        if not msg:
-            continue
-
-        if msg.lower() == "exit":
-            break
-
-        parts = msg.split()
-        cmd = parts[0].lower()
-
-        # UPLOAD
-        if cmd == "/upload" and len(parts) > 1:
-            filename = parts[1]
-
-            if os.path.exists(filename):
-                client.sendto(msg.encode(), (SERVER_IP, SERVER_PORT))
-                resp, _ = client.recvfrom(BUFFER_SIZE)
-
-                if resp == b"READY":
-                    with open(filename, "rb") as f:
-                        while True:
-                            chunk = f.read(BUFFER_SIZE)
-                            if not chunk:
-                                break
-                            client.sendto(chunk, (SERVER_IP, SERVER_PORT))
-
-                    client.sendto(b"<END>", (SERVER_IP, SERVER_PORT))
-
-                    resp, _ = client.recvfrom(BUFFER_SIZE)
-                    print("SERVER:", resp.decode())
-                else:
-                    print("SERVER:", resp.decode())
-
-            else:
-                print("File nuk ekziston.")
-
-        # DOWNLOAD
-        elif cmd == "/download" and len(parts) > 1:
-            filename = parts[1]
-            client.sendto(msg.encode(), (SERVER_IP, SERVER_PORT))
-
-            with open(f"marre_{filename}", "wb") as f:
-                while True:
-                    data, _ = client.recvfrom(BUFFER_SIZE)
-
-                    if b"ERROR:" in data and b"<END>" in data:
-                        print("SERVER:", data.replace(b"<END>", b"").decode())
-                        f.close()
-                        os.remove(f"marre_{filename}")
-                        break
-
-                    if b"<END>" in data:
-                        f.write(data.replace(b"<END>", b""))
-                        print("Download perfundoi.")
-                        break
-
-                    f.write(data)
-
-        # KOMANDA TJERA
-        else:
-            client.sendto(msg.encode(), (SERVER_IP, SERVER_PORT))
-            data, _ = client.recvfrom(BUFFER_SIZE)
-            print("SERVER:", data.decode())
-
-    client.close()
+    size = os.path.getsize(path)
+    created = datetime.fromtimestamp(os.path.getctime(path)).strftime('%Y-%m-%d %H:%M:%S')
+    modified = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
+    return f"Size: {size} bytes | Created: {created} | Modified: {modified}"
 
 
-if __name__ == "__main__":
-    start_client()
+def delete_file(filename):
+    filename = safe_filename(filename)
+    if not filename:
+        return "Emri i file-it nuk eshte valid."
+
+    path = os.path.join(SERVER_DIR, filename)
+    if not os.path.exists(path):
+        return "Skedari nuk u gjet."
+
+    os.remove(path)
+    return f"Skedari '{filename}' u fshi me sukses."
+
+
+def receive_upload(filename, addr):
+    filename = safe_filename(filename)
+    if not filename:
+        return "Emri i file-it nuk eshte valid."
+
+    path = os.path.join(SERVER_DIR, filename)
+
+    with open(path, "wb") as f:
+        while True:
+            data, sender_addr = server_socket.recvfrom(BUFFER_SIZE)
+
+            if sender_addr != addr:
+                continue
+
+            if b"<END>" in data:
+                f.write(data.replace(b"<END>", b""))
+                break
+
+            f.write(data)
+
+    return f"Upload i file-it '{filename}' perfundoi me sukses."
+
+
+def send_download(filename, addr):
+    filename = safe_filename(filename)
+    if not filename:
+        server_socket.sendto(b"ERROR: Emri i file-it nuk eshte valid.<END>", addr)
+        return
+
+    path = os.path.join(SERVER_DIR, filename)
+    if not os.path.exists(path):
+        server_socket.sendto(b"ERROR: Skedari nuk u gjet.<END>", addr)
+        return
+
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(BUFFER_SIZE)
+            if not chunk:
+                break
+            server_socket.sendto(chunk, addr)
+
+    server_socket.sendto(b"<END>", addr)
