@@ -70,7 +70,6 @@ def register_or_update_client(addr):
 
             stats["active_addrs"][addr] = current_time
             stats["active_connections"] = len(stats["active_addrs"])
-
             stats["clients_info"].append({
                 "ip": addr[0],
                 "port": addr[1],
