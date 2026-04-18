@@ -43,3 +43,22 @@ def receive_upload(filename, addr):
             f.write(data)
 
     return f"Upload i file-it '{filename}' perfundoi me sukses."
+def send_download(filename, addr):
+    filename = safe_filename(filename)
+    if not filename:
+        server_socket.sendto(b"ERROR: Emri i file-it nuk eshte valid.<END>", addr)
+        return
+
+    path = os.path.join(SERVER_DIR, filename)
+    if not os.path.exists(path):
+        server_socket.sendto(b"ERROR: Skedari nuk u gjet.<END>", addr)
+        return
+
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(BUFFER_SIZE)
+            if not chunk:
+                break
+            server_socket.sendto(chunk, addr)
+
+    server_socket.sendto(b"<END>", addr)
