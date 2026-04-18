@@ -5,7 +5,6 @@ import time
 import json
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
 IP = '127.0.0.1'
 PORT = 9000
 HTTP_PORT = 8080
