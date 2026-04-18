@@ -22,3 +22,24 @@ def delete_file(filename):
 
     os.remove(path)
     return f"Skedari '{filename}' u fshi me sukses."
+def receive_upload(filename, addr):
+    filename = safe_filename(filename)
+    if not filename:
+        return "Emri i file-it nuk eshte valid."
+
+    path = os.path.join(SERVER_DIR, filename)
+
+    with open(path, "wb") as f:
+        while True:
+            data, sender_addr = server_socket.recvfrom(BUFFER_SIZE)
+
+            if sender_addr != addr:
+                continue
+
+            if b"<END>" in data:
+                f.write(data.replace(b"<END>", b""))
+                break
+
+            f.write(data)
+
+    return f"Upload i file-it '{filename}' perfundoi me sukses."
