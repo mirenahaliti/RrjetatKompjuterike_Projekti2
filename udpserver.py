@@ -4,33 +4,33 @@ import os
 import time
 import json
 from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# 1. KONFIGURIMET (Pika 1 e detyrës)
-IP = '192.168.0.24'
-PORT = 12009
+# KONFIGURIMET
+IP = '127.0.0.1'
+PORT = 9000
 HTTP_PORT = 8080
-MAX_CLIENTS = 10  # Pragu (Pika 2)
+MAX_CLIENTS = 4
 BUFFER_SIZE = 4096
+TIMEOUT = 300
 SERVER_DIR = "server_files"
 
 if not os.path.exists(SERVER_DIR):
     os.makedirs(SERVER_DIR)
 
-# Struktura për monitorim (Pika 4 dhe 7)
+# UDP socket
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server_socket.bind((IP, PORT))
+
+# Statistika dhe monitorim
 stats = {
     "active_connections": 0,
     "total_messages": 0,
     "clients_info": [],
-    "active_addrs": {}
+    "active_addrs": {},   # {(ip, port): last_seen_timestamp}
+    "messages": []        # ruan mesazhet/kërkesat për monitorim
 }
 
-admin_addr = None  # Për qasjen e plotë (Pika 6)
+admin_addr = None
+lock = threading.Lock()
 
-
-def get_file_info(filename):
-    path = os.path.join(SERVER_DIR, filename)
-    if os.path.exists(path):
-        size = os.path.getsize(path)
-        ctime = datetime.fromtimestamp(os.path.getctime(path)).strftime('%Y-%m-%d %H:%M:%S')
-        return f"Size: {size} bytes, Created: {ctime}"
-    return "Skedari nuk u gjet."
