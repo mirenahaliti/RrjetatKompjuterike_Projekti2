@@ -143,7 +143,6 @@ def list_files():
         return "Nuk ka file ne server."
     return "\n".join(files)
 
-
 def read_file(filename):
     filename = safe_filename(filename)
     if not filename:
