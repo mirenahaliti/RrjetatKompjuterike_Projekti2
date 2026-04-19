@@ -4,7 +4,7 @@ import time
 import threading
 
 SERVER_IP = '172.16.109.215'
-SERVER_PORT = 12020
+SERVER_PORT = 12030
 BUFFER_SIZE = 4096
 
 last_activity_time = time.time()
@@ -12,15 +12,15 @@ def check_timeout():
     global last_activity_time
     while True:
         time.sleep(1)
-        if time.time() - last_activity_time > 30:
-            print("\n[VËREJTJE]: Lidhja me serverin ka skaduar (30 sekonda inaktivitet).")
+        if time.time() - last_activity_time > 200:
+            print("\nLidhja me serverin ka skaduar.")
             print("Shkruani diçka për t'u ri-lidhur automatikisht: ", end="", flush=True)
             last_activity_time = time.time()
 
 def start_client():
     global last_activity_time
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    client_socket.settimeout(30.0)
+    client_socket.settimeout(200)
 
     threading.Thread(target=check_timeout, daemon=True).start()
 
@@ -99,7 +99,7 @@ def start_client():
 
 
         except socket.timeout:
-            print("\n[VËREJTJE]: Lidhja me serverin ka skaduar ose serveri është i mbyllur.")
+            print("\nLidhja me serverin ka skaduar ose serveri është i mbyllur.")
             print("Provoni të dërgoni një mesazh përsëri për t'u ri-lidhur automatikisht.\n")
         except Exception as e:
             print(f"Ndodhi një gabim: {e}")
