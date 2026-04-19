@@ -2,7 +2,6 @@ import socket
 import os
 import time
 import threading
-
 SERVER_IP = '172.16.109.215'
 SERVER_PORT = 12030
 BUFFER_SIZE = 4096
