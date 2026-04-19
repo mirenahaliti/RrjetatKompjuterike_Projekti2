@@ -6,12 +6,12 @@ import json
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-IP = '172.16.109.215'
-PORT = 12021
+IP = '0.0.0.0'
+PORT = 12030
 HTTP_PORT = 8080
 MAX_CLIENTS = 5
 BUFFER_SIZE = 4096
-TIMEOUT = 30
+TIMEOUT = 200
 SERVER_DIR = "server_files"
 
 if not os.path.exists(SERVER_DIR):
@@ -247,6 +247,7 @@ class StatsHandler(BaseHTTPRequestHandler):
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")  # SHTO KËTË RRESHT
             self.end_headers()
             self.wfile.write(json.dumps(response, indent=4).encode())
         else:
@@ -259,7 +260,7 @@ class StatsHandler(BaseHTTPRequestHandler):
 
 def start_http_server():
     http_server = HTTPServer((IP, HTTP_PORT), StatsHandler)
-    print(f"HTTP monitorimi u startua ne http://{IP}:{HTTP_PORT}/stats")
+    print(f"Monitorimi: http://localhost:{HTTP_PORT}/stats")
     http_server.serve_forever()
 
 
@@ -269,7 +270,6 @@ def handle_command(message, addr):
         return "Komande e pavlefshme."
 
     cmd = parts[0].lower()
-
 
     user_allowed = ["/list", "/read", "/search"]
 
