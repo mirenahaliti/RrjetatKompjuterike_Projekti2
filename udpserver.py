@@ -5,22 +5,21 @@ import time
 import json
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
-IP = '127.0.0.1'
-PORT = 9000
+
+IP = '172.16.109.215'
+PORT = 12021
 HTTP_PORT = 8080
-MAX_CLIENTS = 4
+MAX_CLIENTS = 5
 BUFFER_SIZE = 4096
-TIMEOUT = 300
+TIMEOUT = 30
 SERVER_DIR = "server_files"
 
 if not os.path.exists(SERVER_DIR):
     os.makedirs(SERVER_DIR)
 
-# UDP socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server_socket.bind((IP, PORT))
 
-# Statistika dhe monitorim
 stats = {
     "active_connections": 0,
     "total_messages": 0,
@@ -45,12 +44,10 @@ def safe_filename(filename):
 def is_admin(addr):
     return addr == admin_addr
 
-
 def get_permissions_for_role(role):
     if role == "ADMIN":
         return ["read", "write", "execute"]
     return ["read"]
-
 
 def register_or_update_client(addr):
     global admin_addr
@@ -86,13 +83,11 @@ def register_or_update_client(addr):
     return True, "OK"
 
 
-
-
 def remove_inactive_clients():
     global admin_addr
 
     while True:
-        time.sleep(5)
+        time.sleep(1)
         current_time = time.time()
 
         with lock:
@@ -102,6 +97,7 @@ def remove_inactive_clients():
             ]
 
             for addr in inactive_clients:
+                print(f"Lidhja u mbyll automatikisht për {addr} (Inaktivitet).")
                 del stats["active_addrs"][addr]
 
                 removed_role = None
@@ -132,7 +128,6 @@ def log_message_for_stats(addr, message):
             "time": now_str()
         })
 
-        # për të mos u bërë shumë i madh
         if len(stats["messages"]) > 100:
             stats["messages"] = stats["messages"][-100:]
 
@@ -275,16 +270,16 @@ def handle_command(message, addr):
 
     cmd = parts[0].lower()
 
-    # USER ka vetëm read permissions
+
     user_allowed = ["/list", "/read", "/search"]
 
-    # Vonese e vogël për USER që ADMIN të ketë kohë përgjigjeje më të shpejtë
+
     if not is_admin(addr):
         if cmd not in user_allowed:
             return "ERROR: Ju keni vetem read permission."
         time.sleep(1)
 
-    # Komandat e lejuara për të gjithë
+
     if cmd == "/list":
         return list_files()
 
@@ -294,7 +289,7 @@ def handle_command(message, addr):
     elif cmd == "/search" and len(parts) > 1:
         return search_files(parts[1])
 
-    # Komandat vetëm për ADMIN
+
     elif cmd == "/upload" and len(parts) > 1:
         server_socket.sendto(b"READY", addr)
         return receive_upload(parts[1], addr)
@@ -309,7 +304,7 @@ def handle_command(message, addr):
     elif cmd == "/info" and len(parts) > 1:
         return get_file_info(parts[1])
 
-    # Çdo tekst i zakonshëm trajtohet si mesazh
+
     elif not cmd.startswith("/"):
         return f"Mesazhi u pranua nga serveri: {message}"
 
