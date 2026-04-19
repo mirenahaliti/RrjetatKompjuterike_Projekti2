@@ -2,8 +2,8 @@ import socket
 import os
 import time
 import threading
-SERVER_IP = '172.16.109.215'
-SERVER_PORT = 12030
+SERVER_IP = '127.0.0.1'
+SERVER_PORT = 12060
 BUFFER_SIZE = 4096
 
 last_activity_time = time.time()
