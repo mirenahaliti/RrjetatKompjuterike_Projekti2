@@ -7,8 +7,8 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 IP = '0.0.0.0'
-PORT = 12030
-HTTP_PORT = 8080
+PORT = 12060
+HTTP_PORT = 9090
 MAX_CLIENTS = 5
 BUFFER_SIZE = 4096
 TIMEOUT = 200
@@ -233,10 +233,12 @@ def send_download(filename, addr):
 
     server_socket.sendto(b"<END>", addr)
 
+
 class StatsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/stats":
             with lock:
+
                 response = {
                     "active_connections": stats["active_connections"],
                     "ip_addresses": [f"{c['ip']}:{c['port']}" for c in stats["clients_info"]],
@@ -245,14 +247,27 @@ class StatsHandler(BaseHTTPRequestHandler):
                     "messages": stats["messages"]
                 }
 
+
+            response_data = json.dumps(response, indent=4).encode('utf-8')
+
+
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Cache-Control", "no-store")  # SHTO KËTË RRESHT
+            self.send_header("Content-Length", str(len(response_data)))
+
+
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+            self.send_header("Refresh", "2")
+
             self.end_headers()
-            self.wfile.write(json.dumps(response, indent=4).encode())
+            self.wfile.write(response_data)
         else:
+
             self.send_response(404)
             self.end_headers()
+            self.wfile.write(b"404 - Faqja nuk u gjet. Perdorni /stats")
 
     def log_message(self, format, *args):
         return
